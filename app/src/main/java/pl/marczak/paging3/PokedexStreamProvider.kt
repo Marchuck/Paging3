@@ -26,7 +26,7 @@ class PokedexStreamProvider constructor(
         809 to "Generation VIII"
     )
 
-    fun pagedListObservable() = Pager(
+    private fun pagedListObservable() = Pager(
         config = PagingConfig(20),
         remoteMediator = null,
         pagingSourceFactory = { pokedexPagingSource }

@@ -12,9 +12,6 @@ class PokedexPagingSource constructor(
     private val pokeApi: PokeApi
 ) : RxPagingSource<Int, PokemonEntry>() {
 
-    companion object {
-        const val PAGE_SIZE = 20
-    }
 
     override fun loadSingle(params: LoadParams<Int>): Single<FetchResult> {
         val key = params.key ?: 0
@@ -32,4 +29,9 @@ class PokedexPagingSource constructor(
     fun <T> io.reactivex.rxjava3.core.Single<T>.asRxJava2Single(): Single<T> {
         return RxJavaBridge.toV2Single(this)
     }
+
+    companion object {
+        const val PAGE_SIZE = 20
+    }
+
 }

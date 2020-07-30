@@ -1,17 +1,16 @@
 package pl.marczak.paging3
 
 import android.annotation.SuppressLint
+import android.util.TypedValue
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
-import androidx.core.view.isVisible
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
-import coil.api.load
 import pl.marczak.paging3.databinding.ItemBookBinding
 
-class PokedexPagedAdapter :
-    PagingDataAdapter<PokemonEntry, ViewHolder>(DiffCallback()) {
+class PokedexAdapter : PagingDataAdapter<PokemonEntry, ViewHolder>(DiffCallback()) {
 
     var initialLoadEnd: () -> Unit = {}
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -41,11 +40,13 @@ class ViewHolder(private val binding: ItemBookBinding) : RecyclerView.ViewHolder
     fun bind(entry: PokemonEntry) {
         if (entry.url.isEmpty()) {
             binding.textView.text = entry.name
-            binding.imageView.isVisible = false
+            binding.textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 28f)
+            binding.imageView.visibility = View.INVISIBLE
         } else {
-            binding.imageView.isVisible = true
+            binding.imageView.visibility = View.VISIBLE
             binding.imageView.loadPokeImage(entry.name)
-            binding.textView.text = "#${entry.getPokeId()} ${entry.name}"
+            binding.textView.text = "#${String.format("%03d", entry.getPokeId())} ${entry.name}"
+            binding.textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
         }
     }
 }

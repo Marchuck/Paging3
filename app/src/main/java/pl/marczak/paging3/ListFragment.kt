@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
+import io.reactivex.rxjava3.disposables.Disposable
 import pl.marczak.paging3.databinding.ListFragmentBinding
 
 class ListFragment : Fragment() {
@@ -15,7 +16,9 @@ class ListFragment : Fragment() {
 
     private lateinit var viewModel: ListViewModel
 
-    val pagedAdapter = PokedexPagedAdapter()
+    private var disposable: Disposable? = null
+
+    private val pagedAdapter = PokedexAdapter()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -37,11 +40,18 @@ class ListFragment : Fragment() {
         }
 
         viewModel = ListViewModel(PokedexStreamProvider(PokedexPagingSource(PokeApiClient())))
-        val disposable = viewModel.observe()
-            .subscribe({
-                binding.recyclerView.post { pagedAdapter.submitData(lifecycle, it) }
-            }, {
-                Log.e("ListFragment", "onError $it", it)
-            })
+        disposable =
+            viewModel.observe()
+                .subscribe({
+                    binding.recyclerView.post { pagedAdapter.submitData(lifecycle, it) }
+                }, {
+                    Log.e("ListFragment", "onError $it", it)
+                })
+
+    }
+
+    override fun onStop() {
+        super.onStop()
+        disposable?.dispose()
     }
 }
