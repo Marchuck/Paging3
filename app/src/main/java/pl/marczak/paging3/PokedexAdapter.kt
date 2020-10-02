@@ -1,6 +1,5 @@
 package pl.marczak.paging3
 
-import android.annotation.SuppressLint
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
@@ -8,45 +7,84 @@ import android.view.ViewGroup
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
-import pl.marczak.paging3.databinding.ItemBookBinding
+import pl.marczak.paging3.PokeModel.Companion.VIEWTYPE_HEADER
+import pl.marczak.paging3.PokeModel.Companion.VIEWTYPE_NONE
+import pl.marczak.paging3.PokeModel.Companion.VIEWTYPE_POKE
+import pl.marczak.paging3.databinding.ItemHeaderBinding
+import pl.marczak.paging3.databinding.ItemLoadingBinding
+import pl.marczak.paging3.databinding.ItemPokeBinding
+import java.lang.IllegalStateException
 
-class PokedexAdapter : PagingDataAdapter<PokemonEntry, ViewHolder>(DiffCallback()) {
+class PokedexAdapter : PagingDataAdapter<PokeModel, BaseViewHolder>(DiffCallback()) {
 
-    var initialLoadEnd: () -> Unit = {}
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        getItem(position)?.let(holder::bind)
-        initialLoadEnd()
+    override fun getItemViewType(position: Int): Int {
+        return getItem(position)?.getViewType() ?: VIEWTYPE_NONE
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val binding = ItemBookBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return ViewHolder(binding)
+    override fun onBindViewHolder(holder: BaseViewHolder, position: Int) {
+        val item = getItem(position) ?: return
+        when {
+            item is PokeModel.Character && holder is BaseViewHolder.PokeViewHolder -> {
+                holder.bind(item.pokemonEntry)
+            }
+            item is PokeModel.Header && holder is BaseViewHolder.HeaderHolder -> {
+                holder.bind(item.title)
+            }
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BaseViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+        when (viewType) {
+            VIEWTYPE_NONE -> {
+                val binding = ItemLoadingBinding.inflate(inflater, parent, false)
+                return BaseViewHolder.ShimmerViewHolder(binding)
+            }
+            VIEWTYPE_HEADER -> {
+                val binding = ItemHeaderBinding.inflate(inflater, parent, false)
+                return BaseViewHolder.HeaderHolder(binding)
+            }
+            VIEWTYPE_POKE -> {
+                val binding = ItemPokeBinding.inflate(inflater, parent, false)
+                return BaseViewHolder.PokeViewHolder(binding)
+            }
+        }
+        return notImplemented(viewType)
+    }
+
+    private fun notImplemented(viewType: Int): Nothing {
+        throw IllegalStateException("no such viewType: $viewType")
     }
 }
 
-class DiffCallback : DiffUtil.ItemCallback<PokemonEntry>() {
-    override fun areItemsTheSame(oldItem: PokemonEntry, newItem: PokemonEntry): Boolean {
+class DiffCallback : DiffUtil.ItemCallback<PokeModel>() {
+    override fun areItemsTheSame(oldItem: PokeModel, newItem: PokeModel): Boolean {
         return oldItem == newItem
     }
 
-    override fun areContentsTheSame(oldItem: PokemonEntry, newItem: PokemonEntry): Boolean {
+    override fun areContentsTheSame(oldItem: PokeModel, newItem: PokeModel): Boolean {
         return oldItem == newItem
     }
 }
 
-class ViewHolder(private val binding: ItemBookBinding) : RecyclerView.ViewHolder(binding.root) {
+sealed class BaseViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
 
-    @SuppressLint("SetTextI18n")
-    fun bind(entry: PokemonEntry) {
-        if (entry.url.isEmpty()) {
-            binding.textView.text = entry.name
-            binding.textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 28f)
-            binding.imageView.visibility = View.INVISIBLE
-        } else {
+    class PokeViewHolder(val binding: ItemPokeBinding) : BaseViewHolder(binding.root) {
+
+        fun bind(entry: PokemonEntry) {
             binding.imageView.visibility = View.VISIBLE
             binding.imageView.loadPokeImage(entry.name)
             binding.textView.text = "#${String.format("%03d", entry.getPokeId())} ${entry.name}"
             binding.textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
         }
     }
+
+    class HeaderHolder(val binding: ItemHeaderBinding) : BaseViewHolder(binding.root) {
+
+        fun bind(header: String) {
+            binding.root.text = header
+        }
+    }
+
+    class ShimmerViewHolder(binding: ItemLoadingBinding) : BaseViewHolder(binding.root)
 }

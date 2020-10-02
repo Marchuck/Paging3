@@ -6,7 +6,6 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.view.isVisible
 import io.reactivex.rxjava3.disposables.Disposable
 import pl.marczak.paging3.databinding.ListFragmentBinding
 
@@ -32,12 +31,6 @@ class ListFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.recyclerView.adapter = pagedAdapter
-
-        binding.progressBar.isVisible = true
-
-        pagedAdapter.initialLoadEnd = {
-            binding.progressBar.isVisible = false
-        }
 
         viewModel = ListViewModel(PokedexStreamProvider(PokedexPagingSource(PokeApiClient())))
         disposable =

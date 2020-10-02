@@ -7,9 +7,10 @@ import androidx.paging.PagingData.Companion.insertSeparators
 import androidx.paging.rxjava2.observable
 import hu.akarnokd.rxjava3.bridge.RxJavaBridge
 import io.reactivex.rxjava3.core.Observable
+import pl.marczak.paging3.PokedexPagingSource.Companion.PAGE_SIZE
 
 interface PagedListProvider {
-    fun providePagedList(): Observable<PagingData<PokemonEntry>>
+    fun providePagedList(): Observable<PagingData<PokeModel>>
 }
 
 class PokedexStreamProvider constructor(
@@ -27,23 +28,24 @@ class PokedexStreamProvider constructor(
     )
 
     private fun pagedListObservable() = Pager(
-        config = PagingConfig(20),
+        config = PagingConfig(pageSize = PAGE_SIZE, enablePlaceholders = true),
         remoteMediator = null,
         pagingSourceFactory = { pokedexPagingSource }
     ).observable.map {
-        insertSeparators(it) { before: PokemonEntry?, after: PokemonEntry? ->
+        insertSeparators(it) { before: PokeModel?, _: PokeModel? ->
             if (before == null) {
-                return@insertSeparators PokemonEntry("Generation I", "")
+                return@insertSeparators PokeModel.Header("Generation I")
             }
-            val id = before.getPokeId()
+            require(before is PokeModel.Character)
+            val id = before.pokemonEntry.getPokeId()
             generationsMap[id]?.let { generationName ->
-                return@insertSeparators PokemonEntry(generationName, "")
+                return@insertSeparators PokeModel.Header(generationName)
             }
             return@insertSeparators null
         }
     }
 
-    override fun providePagedList(): Observable<PagingData<PokemonEntry>> {
+    override fun providePagedList(): Observable<PagingData<PokeModel>> {
         return RxJavaBridge.toV3Observable(pagedListObservable())
     }
 }
