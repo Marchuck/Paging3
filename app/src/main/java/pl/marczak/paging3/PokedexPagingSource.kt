@@ -15,13 +15,13 @@ class PokedexPagingSource constructor(
         val key = params.key ?: 0
 
         return pokeApi.getPokedex(key, PAGE_SIZE)
-            .map {
+            .map { response ->
                 val result: FetchResult = LoadResult.Page(
-                    data = it.results.map { PokeModel.Character(it) },
-                    prevKey = null,
+                    data = response.results.map { PokeModel.Character(it) },
+                    prevKey = if (key - PAGE_SIZE < 0) null else key - PAGE_SIZE,
                     nextKey = key + PAGE_SIZE,
-                    itemsBefore = determineItemsBefore(key),
-                    itemsAfter = determineItemsAfter(key, it.count)
+                    itemsBefore = key,
+                    itemsAfter = determineItemsAfter(key, response.count)
                 )
                 result
             }.asRxJava2Single()
@@ -31,19 +31,11 @@ class PokedexPagingSource constructor(
         return (count - key).coerceAtLeast(0)
     }
 
-    private fun determineItemsBefore(key: Int): Int {
-        return PAGE_SIZE * key
-    }
-
-    override val keyReuseSupported: Boolean
-        get() = true
-
-    fun <T> io.reactivex.rxjava3.core.Single<T>.asRxJava2Single(): Single<T> {
+    private fun <T> io.reactivex.rxjava3.core.Single<T>.asRxJava2Single(): Single<T> {
         return RxJavaBridge.toV2Single(this)
     }
 
     companion object {
         const val PAGE_SIZE = 20
     }
-
 }

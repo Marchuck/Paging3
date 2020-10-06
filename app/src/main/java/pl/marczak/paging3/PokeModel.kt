@@ -9,6 +9,11 @@ sealed class PokeModel {
         override fun getViewType() = VIEWTYPE_POKE
     }
 
+
+    object Placeholder : PokeModel() {
+        override fun getViewType() = VIEWTYPE_NONE
+    }
+
     abstract fun getViewType(): Int
 
     companion object {

@@ -17,7 +17,7 @@ class PokedexStreamProvider constructor(
     private val pokedexPagingSource: PokedexPagingSource
 ) : PagedListProvider {
 
-    private val generationsMap = mapOf(
+    private val generationsStartInfo = mapOf(
         151 to "Generation II",
         251 to "Generation III",
         386 to "Generation IV",
@@ -31,14 +31,16 @@ class PokedexStreamProvider constructor(
         config = PagingConfig(pageSize = PAGE_SIZE, enablePlaceholders = true),
         remoteMediator = null,
         pagingSourceFactory = { pokedexPagingSource }
-    ).observable.map {
-        insertSeparators(it) { before: PokeModel?, _: PokeModel? ->
+    ).observable.map { it.insertGenerationHeaders() }
+
+    private fun PagingData<PokeModel>.insertGenerationHeaders(): PagingData<PokeModel> {
+        return insertSeparators(this) { before: PokeModel?, _: PokeModel? ->
             if (before == null) {
                 return@insertSeparators PokeModel.Header("Generation I")
             }
             require(before is PokeModel.Character)
             val id = before.pokemonEntry.getPokeId()
-            generationsMap[id]?.let { generationName ->
+            generationsStartInfo[id]?.let { generationName ->
                 return@insertSeparators PokeModel.Header(generationName)
             }
             return@insertSeparators null

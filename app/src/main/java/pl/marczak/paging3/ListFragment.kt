@@ -13,11 +13,17 @@ class ListFragment : Fragment() {
 
     private lateinit var binding: ListFragmentBinding
 
-    private lateinit var viewModel: ListViewModel
-
     private var disposable: Disposable? = null
 
     private val pagedAdapter = PokedexAdapter()
+
+    private val provider: PagedListProvider by lazy {
+        PokedexStreamProvider(
+            PokedexPagingSource(
+                PokeApiClient()
+            )
+        )
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -32,15 +38,11 @@ class ListFragment : Fragment() {
 
         binding.recyclerView.adapter = pagedAdapter
 
-        viewModel = ListViewModel(PokedexStreamProvider(PokedexPagingSource(PokeApiClient())))
-        disposable =
-            viewModel.observe()
-                .subscribe({
-                    binding.recyclerView.post { pagedAdapter.submitData(lifecycle, it) }
-                }, {
-                    Log.e("ListFragment", "onError $it", it)
-                })
-
+        disposable = provider.providePagedList().subscribe({
+            binding.recyclerView.post { pagedAdapter.submitData(lifecycle, it) }
+        }, {
+            Log.e("ListFragment", "onError $it", it)
+        })
     }
 
     override fun onStop() {
